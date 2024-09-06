@@ -1,35 +1,66 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from 'react';
+import axios from 'axios';
+import './App.css';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [videoUrl, setVideoUrl] = useState('');
+  const [formats, setFormats] = useState([]);
+  const [selectedFormat, setSelectedFormat] = useState('');
+  const [error, setError] = useState('');
+
+  const handleFetchFormats = async () => {
+    try {
+      const response = await axios.post('/fetch-formats', { url: videoUrl });
+      setFormats(response.data.split('\n').filter(Boolean));
+      setError('');
+    } catch (error) {
+      setError('Failed to fetch formats. Please check the URL.');
+      console.error('Failed to fetch formats:', error);
+    }
+  };
+
+  const handleDownloadVideo = async () => {
+    try {
+      const response = await axios.post('/download-video', {
+        url: videoUrl,
+        format: selectedFormat,
+      });
+      alert(response.data);
+      setError('');
+    } catch (error) {
+      setError('Failed to download video.');
+      console.error('Failed to download video:', error);
+    }
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div className="container">
+      <h1>YouTube Video Downloader</h1>
+      <input
+        type="text"
+        value={videoUrl}
+        onChange={(e) => setVideoUrl(e.target.value)}
+        placeholder="Enter YouTube URL"
+      />
+      <button onClick={handleFetchFormats}>Fetch Formats</button>
+
+      {formats.length > 0 && (
+        <div>
+          <select onChange={(e) => setSelectedFormat(e.target.value)} defaultValue="">
+            <option value="" disabled>Select a format</option>
+            {formats.map((format, index) => (
+              <option key={index} value={format.split(',')[0].split(': ')[1]}>
+                {format}
+              </option>
+            ))}
+          </select>
+          <button onClick={handleDownloadVideo}>Download Video</button>
+        </div>
+      )}
+      
+      {error && <div className="alert">{error}</div>}
+    </div>
+  );
 }
 
-export default App
+export default App;
